@@ -1,0 +1,1175 @@
+import { useState, useEffect, useRef } from "react";
+
+// ── DESIGN TOKENS — AIR FORCE BLUE/SILVER/WHITE ───────────────────────────────
+const C = {
+  bg: "#0a0e1a",
+  bgCard: "#111827",
+  bgElevated: "#1a2235",
+  borderDim: "#1e2d45",
+  border: "#2a3f5f",
+  accent: "#1e6fcf",
+  accentBright: "#3b8fe8",
+  accentGlow: "#1e6fcf33",
+  silver: "#a8b8cc",
+  silverDim: "#5a7090",
+  white: "#eef2f7",
+  whiteDim: "#c8d4e0",
+  gold: "#c8a84b",
+  success: "#2ecc71",
+  danger: "#e74c3c",
+  warn: "#f39c12",
+};
+
+// ── DATA ──────────────────────────────────────────────────────────────────────
+
+const MURRY_PROGRAM = {
+  "Push A": {
+    subtitle: "Quads · Triceps · Shoulders",
+    color: C.accent,
+    exercises: [
+      { name: "Back Squat", sets: 5, reps: "6–8", note: "Progressive overload weekly" },
+      { name: "Overhead Cable Tricep Extension", sets: 4, reps: "10–12", note: "Long head emphasis — do first" },
+      { name: "Hack Squat", sets: 4, reps: "10–12", note: "Feet close — quad sweep" },
+      { name: "Dumbbell Lateral Raise", sets: 5, reps: "15–20", note: "3-sec eccentric" },
+      { name: "Leg Extension", sets: 4, reps: "15 + drop", note: "Squeeze at top" },
+      { name: "Standing Calf Raise", sets: 5, reps: "20", note: "2-sec pause at bottom" },
+    ],
+  },
+  "Pull A": {
+    subtitle: "Hamstrings · Upper Back · Biceps",
+    color: C.silver,
+    exercises: [
+      { name: "Romanian Deadlift", sets: 4, reps: "10–12", note: "3-sec eccentric" },
+      { name: "Meadows Row", sets: 4, reps: "10–12", note: "Full stretch, row to hip" },
+      { name: "Lying Leg Curl", sets: 4, reps: "12–15", note: "Squeeze hard at top" },
+      { name: "Chest Supported T-Bar Row", sets: 4, reps: "8–10", note: "Pure back stimulus" },
+      { name: "Face Pulls", sets: 5, reps: "20", note: "Non-negotiable every pull day" },
+      { name: "Seated Calf Raise", sets: 5, reps: "20", note: "Hits soleus" },
+    ],
+  },
+  "Push B": {
+    subtitle: "Quads · Chest · Triceps",
+    color: C.accent,
+    exercises: [
+      { name: "Leg Press", sets: 4, reps: "12–15", note: "High foot placement" },
+      { name: "Barbell Bench Press", sets: 4, reps: "6–8", note: "Add 2.5–5 lbs weekly" },
+      { name: "Close Grip Bench Press", sets: 4, reps: "8–10", note: "Heavy and controlled" },
+      { name: "Walking Lunges", sets: 3, reps: "12/leg", note: "Quad-glute tie-in" },
+      { name: "Rope Pushdown", sets: 4, reps: "15–20", note: "Spread rope at bottom" },
+      { name: "Standing Calf Raise", sets: 5, reps: "20", note: "Full range, heavy" },
+    ],
+  },
+  "Pull B": {
+    subtitle: "Hamstrings · Lats · Biceps",
+    color: C.silver,
+    exercises: [
+      { name: "Trap Bar RDL", sets: 4, reps: "10–12", note: "Hips back not down" },
+      { name: "Weighted Pull-Ups", sets: 4, reps: "6–8", note: "Add weight when easy" },
+      { name: "Seated Leg Curl", sets: 4, reps: "12–15", note: "Full hamstring development" },
+      { name: "Wide-Grip Lat Pulldown", sets: 4, reps: "10–12", note: "Pull to upper chest" },
+      { name: "Incline DB Curl", sets: 4, reps: "12", note: "Full stretch at bottom" },
+      { name: "Seated Calf Raise", sets: 5, reps: "20", note: "Soleus finisher" },
+    ],
+  },
+};
+
+const WIFE_PROGRAM = {
+  "Tuesday": {
+    subtitle: "Lower Body & Glutes",
+    color: "#9B59B6",
+    exercises: [
+      { name: "Barbell Hip Thrust", sets: 4, reps: "12", note: "Squeeze 2 sec at top — most important" },
+      { name: "Hack Squat", sets: 4, reps: "12", note: "Full depth — quad dominant" },
+      { name: "Trap Bar RDL", sets: 3, reps: "12", note: "Hips back not down" },
+      { name: "Squat Machine", sets: 3, reps: "12", note: "Legs fatigued — lighter still burns" },
+      { name: "Leg Curl Machine", sets: 3, reps: "15", note: "Squeeze at top" },
+      { name: "Plank", sets: 3, reps: "45 sec", note: "Core bracing" },
+    ],
+  },
+  "Wednesday": {
+    subtitle: "Upper Body",
+    color: "#E8431A",
+    exercises: [
+      { name: "Lat Pulldown", sets: 4, reps: "10–12", note: "Wide grip — pull to upper chest" },
+      { name: "Seated Cable Row", sets: 3, reps: "12", note: "Squeeze shoulder blades" },
+      { name: "Seated DB Shoulder Press", sets: 4, reps: "10–12", note: "Seated for stability" },
+      { name: "Incline DB Press", sets: 3, reps: "12", note: "Upper chest emphasis" },
+      { name: "DB Lateral Raise", sets: 3, reps: "15", note: "Slow and controlled" },
+      { name: "Tricep Pushdown (cable)", sets: 3, reps: "15", note: "Superset with lateral raise" },
+    ],
+  },
+  "Friday": {
+    subtitle: "Full Body",
+    color: "#1A6EE8",
+    exercises: [
+      { name: "Goblet Squat", sets: 4, reps: "12", note: "Heavy DB at chest — full depth" },
+      { name: "Single Arm DB Row", sets: 4, reps: "10/arm", note: "Full stretch at bottom" },
+      { name: "DB Step Up", sets: 3, reps: "12/leg", note: "Use bench — glute and quad" },
+      { name: "DB Bench Press", sets: 3, reps: "12", note: "Feel chest stretch at bottom" },
+      { name: "Cable Glute Kickback", sets: 3, reps: "15/leg", note: "Squeeze at top" },
+      { name: "Dead Bug", sets: 3, reps: "10/side", note: "Core — slow and deliberate" },
+    ],
+  },
+};
+
+const STANDARD_PLATES = [2.5, 5, 7.5, 8.8, 10, 13.3, 25, 35, 50];
+const OLYMPIC_PLATES = [2.5, 5, 10, 25, 35, 45, 55, 100];
+const DB_INCREMENTS = [5, 8, 10, 12, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 105, 110, 115, 120, 125, 130, 135, 140, 145, 150];
+
+// ── EXERCISE LIBRARY (full gym equipment) ─────────────────────────────────────
+const EXERCISE_LIBRARY = {
+  "Chest": [
+    "Barbell Bench Press", "Incline Barbell Press", "Decline Barbell Press",
+    "Dumbbell Bench Press", "Incline DB Press", "Decline DB Press",
+    "Close Grip Bench Press", "Cable Fly", "Pec Deck", "DB Fly",
+    "Machine Chest Press", "Push-Up", "Weighted Dip (Chest)",
+  ],
+  "Back": [
+    "Deadlift", "Barbell Row", "Pendlay Row", "T-Bar Row", "Chest Supported T-Bar Row",
+    "Meadows Row", "Single Arm DB Row", "Seated Cable Row", "Wide-Grip Lat Pulldown",
+    "Close Grip Lat Pulldown", "Weighted Pull-Ups", "Chin-Ups", "Straight Arm Pulldown",
+    "Machine Row", "Rack Pull",
+  ],
+  "Shoulders": [
+    "Overhead Press", "Seated DB Shoulder Press", "Arnold Press", "Machine Shoulder Press",
+    "Dumbbell Lateral Raise", "Cable Lateral Raise", "Face Pulls", "Reverse Pec Deck",
+    "Rear Delt Fly", "Front Raise", "Upright Row", "Shrugs",
+  ],
+  "Legs - Quads": [
+    "Back Squat", "Front Squat", "Hack Squat", "Leg Press", "Squat Machine",
+    "Goblet Squat", "Leg Extension", "Walking Lunges", "Bulgarian Split Squat",
+    "DB Step Up", "Sissy Squat",
+  ],
+  "Legs - Hamstrings": [
+    "Romanian Deadlift", "Trap Bar RDL", "Stiff Leg Deadlift", "Lying Leg Curl",
+    "Seated Leg Curl", "Good Morning", "Glute Ham Raise", "Cable Pull Through",
+  ],
+  "Glutes": [
+    "Barbell Hip Thrust", "Glute Bridge", "Cable Glute Kickback", "Glute Machine",
+    "Sumo Deadlift", "Curtsy Lunge",
+  ],
+  "Calves": [
+    "Standing Calf Raise", "Seated Calf Raise", "Leg Press Calf Raise", "Donkey Calf Raise",
+  ],
+  "Biceps": [
+    "Barbell Curl", "EZ-Bar Curl", "Incline DB Curl", "Hammer Curl", "Cable Curl",
+    "Preacher Curl", "Concentration Curl", "Spider Curl",
+  ],
+  "Triceps": [
+    "Close Grip Bench Press", "Overhead Cable Tricep Extension", "Skull Crushers",
+    "Rope Pushdown", "Tricep Pushdown (cable)", "Weighted Dip (Triceps)",
+    "Overhead DB Extension", "Kickback",
+  ],
+  "Core": [
+    "Plank", "Dead Bug", "Hanging Leg Raise", "Cable Crunch", "Ab Wheel",
+    "Russian Twist", "Side Plank", "Mountain Climbers",
+  ],
+};
+
+
+function calcPlates(target, bar, plates) {
+  const perSide = (target - bar) / 2;
+  if (perSide < 0) return null;
+  let rem = perSide;
+  const result = [];
+  for (const p of [...plates].sort((a, b) => b - a)) {
+    while (rem >= p - 0.001) { result.push(p); rem -= p; rem = Math.round(rem * 100) / 100; }
+  }
+  return rem > 0.1 ? null : result;
+}
+
+function orm(weight, reps) { return reps === 1 ? weight : Math.round(weight * (1 + reps / 30)); }
+
+// ── STORAGE ───────────────────────────────────────────────────────────────────
+async function load(key, fb) {
+  try { const r = await window.storage.get(key); return r ? JSON.parse(r.value) : fb; }
+  catch { return fb; }
+}
+async function save(key, val) {
+  try { await window.storage.set(key, JSON.stringify(val)); } catch {}
+}
+
+// ── UI PRIMITIVES ─────────────────────────────────────────────────────────────
+function Card({ children, style, glow }) {
+  return (
+    <div style={{
+      background: C.bgCard, borderRadius: 14,
+      border: `1px solid ${glow ? C.accent + "66" : C.borderDim}`,
+      padding: 16,
+      boxShadow: glow ? `0 0 20px ${C.accentGlow}` : "none",
+      ...style,
+    }}>{children}</div>
+  );
+}
+
+function Eyebrow({ children, color }) {
+  return <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 2, textTransform: "uppercase", color: color || C.silverDim, marginBottom: 4 }}>{children}</div>;
+}
+
+function Btn({ children, onClick, color, outline, style, small }) {
+  return (
+    <button onClick={onClick} style={{
+      padding: small ? "7px 14px" : "12px 20px",
+      borderRadius: 10, border: outline ? `1px solid ${color || C.accent}` : "none",
+      background: outline ? "transparent" : (color || C.accent),
+      color: outline ? (color || C.accent) : "#fff",
+      fontWeight: 700, fontSize: small ? 12 : 14,
+      cursor: "pointer", transition: "opacity 0.15s", ...style,
+    }}>{children}</button>
+  );
+}
+
+function Badge({ children, color }) {
+  return <span style={{ background: (color || C.accent) + "22", color: color || C.accent, fontSize: 10, fontWeight: 800, padding: "2px 7px", borderRadius: 4, letterSpacing: 0.5 }}>{children}</span>;
+}
+
+// ── PROFILE SELECTOR ──────────────────────────────────────────────────────────
+function ProfileSelector({ profiles, activeId, onSelect, onAdd }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      <Eyebrow>Select Profile</Eyebrow>
+      {profiles.map(p => (
+        <button key={p.id} onClick={() => onSelect(p.id)} style={{
+          display: "flex", alignItems: "center", gap: 14,
+          background: activeId === p.id ? C.accentGlow : C.bgCard,
+          border: `1px solid ${activeId === p.id ? C.accent : C.borderDim}`,
+          borderRadius: 12, padding: "14px 16px", cursor: "pointer", textAlign: "left",
+          transition: "all 0.2s",
+        }}>
+          <div style={{
+            width: 44, height: 44, borderRadius: "50%",
+            background: p.color + "33",
+            border: `2px solid ${p.color}`,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 18, flexShrink: 0,
+          }}>{p.avatar}</div>
+          <div>
+            <div style={{ color: C.white, fontWeight: 700, fontSize: 15 }}>{p.name}</div>
+            <div style={{ color: C.silverDim, fontSize: 12, marginTop: 2 }}>{p.role} · {p.goal}</div>
+          </div>
+          {activeId === p.id && <div style={{ marginLeft: "auto", color: C.accent, fontSize: 18 }}>✓</div>}
+        </button>
+      ))}
+      <Btn onClick={onAdd} outline small style={{ alignSelf: "flex-start", marginTop: 4 }}>+ Add Client</Btn>
+    </div>
+  );
+}
+
+// ── SESSION LOGGER (with full editing) ────────────────────────────────────────
+function SessionLogger({ profile, prs, onSaveSet, onFinishSession, activeSession, customProgram, onEditProgram }) {
+  // Use customized program if it exists, otherwise the profile default
+  const program = customProgram || profile.program;
+  const days = Object.keys(program);
+  const [day, setDay] = useState(days[0]);
+  const [drafts, setDrafts] = useState({});       // in-progress unsaved inputs
+  const [editMode, setEditMode] = useState(false);
+  const [showLibrary, setShowLibrary] = useState(false);
+  const [libraryCat, setLibraryCat] = useState("Chest");
+  const [customName, setCustomName] = useState("");
+  const [finished, setFinished] = useState(false);
+
+  useEffect(() => {
+    const firstDay = Object.keys(customProgram || profile.program)[0];
+    setDay(firstDay);
+    setDrafts({});
+    setEditMode(false);
+    setFinished(false);
+  }, [profile.id]);
+
+  const session = program[day] || program[Object.keys(program)[0]];
+
+  // Saved sets for the current day come from the activeSession (persisted)
+  const savedLogs = (activeSession && activeSession.day === day) ? activeSession.logs : {};
+
+  const setDraft = (ei, si, field, val) => {
+    setDrafts(prev => {
+      const n = { ...prev };
+      if (!n[ei]) n[ei] = {};
+      if (!n[ei][si]) n[ei][si] = { reps: "", weight: "" };
+      n[ei][si][field] = val;
+      return n;
+    });
+  };
+
+  const getVal = (ei, si, field) => {
+    // Show saved value if it exists, otherwise the draft
+    if (savedLogs[ei]?.[si]?.[field] !== undefined && savedLogs[ei]?.[si]?.saved) {
+      return savedLogs[ei][si][field];
+    }
+    return drafts[ei]?.[si]?.[field] ?? "";
+  };
+
+  const isSetSaved = (ei, si) => !!savedLogs[ei]?.[si]?.saved;
+
+  const saveSet = (ei, si, exName) => {
+    const weight = drafts[ei]?.[si]?.weight ?? savedLogs[ei]?.[si]?.weight ?? "";
+    const reps = drafts[ei]?.[si]?.reps ?? savedLogs[ei]?.[si]?.reps ?? "";
+    if (!weight && !reps) return;
+    onSaveSet(day, session.color, ei, si, exName, { weight, reps, saved: true });
+  };
+
+  const isNewPR = (ei, name) => {
+    const el = savedLogs[ei]; if (!el) return false;
+    const maxW = Math.max(...Object.values(el).map(s => parseFloat(s.weight) || 0));
+    const pr = prs[name];
+    return maxW > 0 && (!pr || maxW > pr.weight);
+  };
+
+  const handleFinish = () => {
+    onFinishSession(day);
+    setFinished(true);
+    setTimeout(() => { setFinished(false); setDrafts({}); }, 2500);
+  };
+
+  const savedSetCount = Object.values(savedLogs).reduce((acc, ex) => acc + Object.values(ex).filter(s => s.saved).length, 0);
+
+  // ── Editing functions ──
+  const editExercise = (ei, field, val) => {
+    const updated = JSON.parse(JSON.stringify(program));
+    updated[day].exercises[ei][field] = val;
+    onEditProgram(updated);
+  };
+
+  const removeExercise = (ei) => {
+    const updated = JSON.parse(JSON.stringify(program));
+    updated[day].exercises.splice(ei, 1);
+    onEditProgram(updated);
+  };
+
+  const moveExercise = (ei, dir) => {
+    const updated = JSON.parse(JSON.stringify(program));
+    const arr = updated[day].exercises;
+    const ni = ei + dir;
+    if (ni < 0 || ni >= arr.length) return;
+    [arr[ei], arr[ni]] = [arr[ni], arr[ei]];
+    onEditProgram(updated);
+  };
+
+  const addExercise = (name) => {
+    if (!name || !name.trim()) return;
+    const updated = JSON.parse(JSON.stringify(program));
+    updated[day].exercises.push({ name: name.trim(), sets: 3, reps: "10–12", note: "" });
+    onEditProgram(updated);
+    setCustomName("");
+    setShowLibrary(false);
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      {/* Profile pill */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", background: C.bgElevated, borderRadius: 10, border: `1px solid ${C.borderDim}` }}>
+        <div style={{ width: 32, height: 32, borderRadius: "50%", background: profile.color + "33", border: `2px solid ${profile.color}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>{profile.avatar}</div>
+        <div style={{ flex: 1 }}>
+          <div style={{ color: C.white, fontWeight: 700, fontSize: 13 }}>{profile.name}</div>
+          <div style={{ color: C.silverDim, fontSize: 11 }}>{profile.goal}</div>
+        </div>
+        <button onClick={() => { setEditMode(!editMode); setShowLibrary(false); }} style={{
+          padding: "6px 12px", borderRadius: 8, border: `1px solid ${editMode ? C.gold : C.border}`,
+          background: editMode ? C.gold + "22" : "transparent",
+          color: editMode ? C.gold : C.silver, fontWeight: 700, fontSize: 12, cursor: "pointer",
+        }}>{editMode ? "✓ Done" : "✎ Edit"}</button>
+      </div>
+
+      {/* Day selector */}
+      <Card>
+        <Eyebrow>Training Day</Eyebrow>
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+          {days.map(d => (
+            <button key={d} onClick={() => { setDay(d); setDrafts({}); setFinished(false); }} style={{
+              padding: "8px 14px", borderRadius: 8, border: "none",
+              background: day === d ? (program[d].color || C.accent) : "#111",
+              color: day === d ? "#fff" : C.silverDim,
+              fontWeight: day === d ? 700 : 400, fontSize: 13, cursor: "pointer",
+            }}>{d}</button>
+          ))}
+        </div>
+        <div style={{ color: C.silverDim, fontSize: 11, marginTop: 8 }}>{session.subtitle}</div>
+        {editMode && <div style={{ color: C.gold, fontSize: 11, marginTop: 6 }}>✎ Edit mode — changes save automatically to this profile</div>}
+      </Card>
+
+      {/* Exercises */}
+      {session.exercises.map((ex, ei) => {
+        const pr = prs[ex.name];
+        const newPR = isNewPR(ei, ex.name);
+
+        if (editMode) {
+          return (
+            <Card key={ei} style={{ border: `1px solid ${C.gold}44` }}>
+              <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 10 }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                  <button onClick={() => moveExercise(ei, -1)} style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 4, color: C.silver, cursor: "pointer", fontSize: 10, padding: "1px 5px" }}>▲</button>
+                  <button onClick={() => moveExercise(ei, 1)} style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 4, color: C.silver, cursor: "pointer", fontSize: 10, padding: "1px 5px" }}>▼</button>
+                </div>
+                <input value={ex.name} onChange={e => editExercise(ei, "name", e.target.value)}
+                  style={{ flex: 1, background: C.bg, border: `1px solid ${C.border}`, borderRadius: 6, color: C.white, padding: "7px 10px", fontSize: 13, fontWeight: 700, outline: "none" }} />
+                <button onClick={() => removeExercise(ei)} style={{ background: C.danger + "22", border: `1px solid ${C.danger}`, borderRadius: 6, color: C.danger, cursor: "pointer", fontSize: 16, padding: "2px 10px", fontWeight: 700 }}>×</button>
+              </div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <div style={{ flex: 1 }}>
+                  <Eyebrow>Sets</Eyebrow>
+                  <input type="number" value={ex.sets} onChange={e => editExercise(ei, "sets", Number(e.target.value))}
+                    style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 6, color: C.white, padding: "7px 10px", fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none" }} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <Eyebrow>Reps</Eyebrow>
+                  <input value={ex.reps} onChange={e => editExercise(ei, "reps", e.target.value)}
+                    style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 6, color: C.white, padding: "7px 10px", fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none" }} />
+                </div>
+              </div>
+              <div style={{ marginTop: 8 }}>
+                <Eyebrow>Note</Eyebrow>
+                <input value={ex.note || ""} onChange={e => editExercise(ei, "note", e.target.value)} placeholder="Coaching cue..."
+                  style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 6, color: C.white, padding: "7px 10px", fontSize: 12, width: "100%", boxSizing: "border-box", outline: "none" }} />
+              </div>
+            </Card>
+          );
+        }
+
+        return (
+          <Card key={ei} glow={newPR}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                  <div style={{ color: C.white, fontWeight: 700, fontSize: 14 }}>{ex.name}</div>
+                  {newPR && <Badge color={C.gold}>🏆 NEW PR</Badge>}
+                </div>
+                <div style={{ color: C.silverDim, fontSize: 11, marginTop: 2 }}>{ex.sets} sets · {ex.reps} reps{ex.note ? ` · ${ex.note}` : ""}</div>
+                {pr && <div style={{ color: C.silverDim, fontSize: 11, marginTop: 2 }}>PR: <span style={{ color: C.gold }}>{pr.weight} lbs</span> · {pr.date}</div>}
+              </div>
+              <Badge color={session.color || C.accent}>{ex.sets}×{ex.reps}</Badge>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {Array.from({ length: ex.sets }).map((_, si) => {
+                const setSaved = isSetSaved(ei, si);
+                return (
+                  <div key={si} style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    <div style={{ color: setSaved ? C.success : C.silverDim, fontSize: 11, width: 36, flexShrink: 0, fontWeight: setSaved ? 700 : 400 }}>Set {si + 1}</div>
+                    <input type="number" placeholder="lbs"
+                      value={getVal(ei, si, "weight")}
+                      onChange={e => setDraft(ei, si, "weight", e.target.value)}
+                      style={{ background: setSaved ? C.success + "11" : C.bg, border: `1px solid ${setSaved ? C.success + "66" : C.border}`, borderRadius: 6, color: C.white, padding: "7px 10px", fontSize: 13, flex: 1, minWidth: 0, outline: "none" }}
+                    />
+                    <input type="number" placeholder="reps"
+                      value={getVal(ei, si, "reps")}
+                      onChange={e => setDraft(ei, si, "reps", e.target.value)}
+                      style={{ background: setSaved ? C.success + "11" : C.bg, border: `1px solid ${setSaved ? C.success + "66" : C.border}`, borderRadius: 6, color: C.white, padding: "7px 10px", fontSize: 13, flex: 1, minWidth: 0, outline: "none" }}
+                    />
+                    <button onClick={() => saveSet(ei, si, ex.name)} style={{
+                      background: setSaved ? C.success : C.accent,
+                      border: "none", borderRadius: 6, color: "#fff",
+                      padding: "7px 10px", fontSize: 13, fontWeight: 700, cursor: "pointer",
+                      flexShrink: 0, minWidth: 40,
+                    }}>{setSaved ? "✓" : "Save"}</button>
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
+        );
+      })}
+
+      {/* Add exercise (edit mode only) */}
+      {editMode && (
+        <>
+          {!showLibrary ? (
+            <Btn onClick={() => setShowLibrary(true)} outline color={C.gold} style={{ width: "100%" }}>+ Add Exercise</Btn>
+          ) : (            <Card style={{ border: `1px solid ${C.gold}44` }}>
+              <Eyebrow color={C.gold}>Add From Library</Eyebrow>
+              <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 10 }}>
+                {Object.keys(EXERCISE_LIBRARY).map(cat => (
+                  <button key={cat} onClick={() => setLibraryCat(cat)} style={{
+                    padding: "5px 10px", borderRadius: 6, border: "none",
+                    background: libraryCat === cat ? C.accent : C.bg,
+                    color: libraryCat === cat ? "#fff" : C.silverDim,
+                    fontWeight: libraryCat === cat ? 700 : 400, fontSize: 11, cursor: "pointer",
+                  }}>{cat}</button>
+                ))}
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 4, maxHeight: 200, overflowY: "auto" }}>
+                {EXERCISE_LIBRARY[libraryCat].map(name => (
+                  <button key={name} onClick={() => addExercise(name)} style={{
+                    textAlign: "left", padding: "9px 12px", borderRadius: 6,
+                    background: C.bg, border: `1px solid ${C.borderDim}`,
+                    color: C.silver, fontSize: 13, cursor: "pointer",
+                  }}>+ {name}</button>
+                ))}
+              </div>
+              <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${C.borderDim}` }}>
+                <Eyebrow>Or Type Custom</Eyebrow>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <input value={customName} onChange={e => setCustomName(e.target.value)} placeholder="Exercise name"
+                    style={{ flex: 1, background: C.bg, border: `1px solid ${C.border}`, borderRadius: 6, color: C.white, padding: "8px 10px", fontSize: 13, outline: "none" }} />
+                  <Btn onClick={() => addExercise(customName)} small>Add</Btn>
+                </div>
+              </div>
+              <Btn onClick={() => setShowLibrary(false)} outline small style={{ marginTop: 10 }}>Close Library</Btn>
+            </Card>
+          )}
+        </>
+      )}
+
+      {!editMode && (
+        <>
+          {savedSetCount > 0 && (
+            <div style={{ textAlign: "center", color: C.silverDim, fontSize: 12 }}>
+              {savedSetCount} set{savedSetCount !== 1 ? "s" : ""} logged today · saved automatically
+            </div>
+          )}
+          <Btn onClick={handleFinish} color={finished ? C.success : (session.color || C.accent)} style={{ width: "100%", transition: "background 0.3s" }} disabled={savedSetCount === 0}>
+            {finished ? "✓ Session Complete" : "Finish Session"}
+          </Btn>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ── CALCULATORS ───────────────────────────────────────────────────────────────
+function Calculators() {
+  const [tab, setTab] = useState("1RM");
+  const [weight, setWeight] = useState(235);
+  const [reps, setReps] = useState(6);
+  const [target, setTarget] = useState(225);
+  const [barType, setBarType] = useState("Olympic");
+  const [dbTarget, setDbTarget] = useState(50);
+
+  const estimated = orm(weight, reps);
+  const barWeight = barType === "Olympic" ? 45 : 20;
+  const plates = barType === "Olympic" ? OLYMPIC_PLATES : STANDARD_PLATES;
+  const result = calcPlates(target, barWeight, plates);
+
+  const nearest = DB_INCREMENTS.reduce((a, b) => Math.abs(b - dbTarget) < Math.abs(a - dbTarget) ? b : a);
+
+  const plateColors = { 100: "#1a1a2e", 55: "#16213e", 45: C.accent, 50: "#1a4a8a", 35: "#1A6EE8", 25: C.success, 13.3: "#8e44ad", 10: C.warn, 8.8: "#e67e22", 7.5: "#16a085", 5: C.silverDim, 2.5: C.silver };
+
+  const tabs = ["1RM", "Barbell", "Dumbbell"];
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ display: "flex", gap: 6 }}>
+        {tabs.map(t => (
+          <button key={t} onClick={() => setTab(t)} style={{
+            flex: 1, padding: "9px 4px", borderRadius: 8, border: "none",
+            background: tab === t ? C.accent : C.bgCard,
+            color: tab === t ? "#fff" : C.silverDim,
+            fontWeight: tab === t ? 700 : 400, fontSize: 13, cursor: "pointer",
+          }}>{t}</button>
+        ))}
+      </div>
+
+      {tab === "1RM" && (
+        <>
+          <Card>
+            <Eyebrow>Weight Lifted (lbs)</Eyebrow>
+            <input type="number" value={weight} onChange={e => setWeight(Number(e.target.value))} min={0} max={1000} step={2.5}
+              style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 8, color: C.white, padding: "10px 14px", fontSize: 15, width: "100%", boxSizing: "border-box", outline: "none" }} />
+            <div style={{ marginTop: 12 }}>
+              <Eyebrow>Reps Performed</Eyebrow>
+              <input type="number" value={reps} onChange={e => setReps(Number(e.target.value))} min={1} max={30}
+                style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 8, color: C.white, padding: "10px 14px", fontSize: 15, width: "100%", boxSizing: "border-box", outline: "none" }} />
+            </div>
+          </Card>
+          <Card glow>
+            <div style={{ textAlign: "center" }}>
+              <Eyebrow color={C.accentBright}>Estimated 1 Rep Max</Eyebrow>
+              <div style={{ fontSize: 56, fontWeight: 900, color: C.white, letterSpacing: -2 }}>{estimated}</div>
+              <div style={{ fontSize: 13, color: C.silverDim }}>lbs</div>
+            </div>
+          </Card>
+          <Card>
+            <Eyebrow>Training Percentages</Eyebrow>
+            {[100, 95, 90, 85, 80, 75, 70, 65, 60].map(pct => {
+              const w = Math.round(estimated * pct / 100 / 2.5) * 2.5;
+              const key = pct === 80 || pct === 90;
+              return (
+                <div key={pct} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 10px", borderRadius: 8, background: key ? C.accentGlow : "transparent", border: key ? `1px solid ${C.accent}44` : "1px solid transparent", marginBottom: 4 }}>
+                  <span style={{ color: key ? C.accentBright : C.silverDim, fontWeight: key ? 700 : 400, fontSize: 13 }}>{pct}%</span>
+                  <span style={{ color: C.white, fontWeight: 700, fontSize: 15 }}>{w} lbs</span>
+                </div>
+              );
+            })}
+          </Card>
+        </>
+      )}
+
+      {tab === "Barbell" && (
+        <>
+          <Card>
+            <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+              {["Olympic", "Standard"].map(t => (
+                <button key={t} onClick={() => setBarType(t)} style={{
+                  flex: 1, padding: "8px", borderRadius: 8, border: "none",
+                  background: barType === t ? C.accent : C.bg,
+                  color: barType === t ? "#fff" : C.silverDim,
+                  fontWeight: barType === t ? 700 : 400, fontSize: 13, cursor: "pointer",
+                }}>{t} ({t === "Olympic" ? "45" : "20"} lb bar)</button>
+              ))}
+            </div>
+            <Eyebrow>Target Weight (lbs)</Eyebrow>
+            <input type="number" value={target} onChange={e => setTarget(Number(e.target.value))} min={barWeight} max={1200} step={2.5}
+              style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 8, color: C.white, padding: "10px 14px", fontSize: 15, width: "100%", boxSizing: "border-box", outline: "none" }} />
+          </Card>
+          {result ? (
+            <Card>
+              <Eyebrow color={C.success}>Plates Per Side</Eyebrow>
+              {result.length === 0 ? (
+                <div style={{ color: C.success, fontWeight: 700 }}>Bar only</div>
+              ) : (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 6 }}>
+                  {result.map((p, i) => (
+                    <div key={i} style={{ background: plateColors[p] || C.bgElevated, border: `2px solid ${plateColors[p] || C.border}`, borderRadius: 8, padding: "8px 14px", color: C.white, fontWeight: 700, fontSize: 16 }}>{p}</div>
+                  ))}
+                </div>
+              )}
+              <div style={{ marginTop: 12, color: C.silverDim, fontSize: 12 }}>
+                Total: <span style={{ color: C.white, fontWeight: 700 }}>{barWeight + result.reduce((a, b) => a + b, 0) * 2} lbs</span>
+              </div>
+              <div style={{ marginTop: 14 }}>
+                <Eyebrow>Quick Reference</Eyebrow>
+                {[100, 90, 80, 70, 60].map(pct => {
+                  const w = Math.round(target * pct / 100 / 2.5) * 2.5;
+                  const pr = calcPlates(w, barWeight, plates);
+                  return (
+                    <div key={pct} style={{ display: "flex", justifyContent: "space-between", padding: "6px 8px", background: C.bg, borderRadius: 6, marginBottom: 4 }}>
+                      <span style={{ color: C.silverDim, fontSize: 12 }}>{pct}% → {w} lbs</span>
+                      <span style={{ color: C.silver, fontSize: 11 }}>{pr ? (pr.length === 0 ? "bar" : pr.join(" + ")) : "—"}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </Card>
+          ) : (
+            <Card><div style={{ color: C.danger, textAlign: "center" }}>Cannot make {target} lbs with available plates. Try a multiple of 2.5.</div></Card>
+          )}
+        </>
+      )}
+
+      {tab === "Dumbbell" && (
+        <>
+          <Card>
+            <Eyebrow>Target Weight (lbs per hand)</Eyebrow>
+            <input type="number" value={dbTarget} onChange={e => setDbTarget(Number(e.target.value))} min={5} max={200} step={5}
+              style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 8, color: C.white, padding: "10px 14px", fontSize: 15, width: "100%", boxSizing: "border-box", outline: "none" }} />
+          </Card>
+          <Card glow>
+            <Eyebrow color={C.accentBright}>Nearest Dumbbell</Eyebrow>
+            <div style={{ fontSize: 52, fontWeight: 900, color: C.white, textAlign: "center", letterSpacing: -2 }}>{nearest}</div>
+            <div style={{ textAlign: "center", color: C.silverDim, fontSize: 12 }}>lbs per hand · {nearest * 2} lbs total</div>
+          </Card>
+          <Card>
+            <Eyebrow>Warm-Up Progression</Eyebrow>
+            {[60, 70, 80, 90, 100].map(pct => {
+              const w = Math.round(nearest * pct / 100 / 5) * 5;
+              const n = DB_INCREMENTS.reduce((a, b) => Math.abs(b - w) < Math.abs(a - w) ? b : a);
+              return (
+                <div key={pct} style={{ display: "flex", justifyContent: "space-between", padding: "7px 10px", background: C.bg, borderRadius: 6, marginBottom: 4 }}>
+                  <span style={{ color: C.silverDim, fontSize: 12 }}>{pct}%</span>
+                  <span style={{ color: pct === 100 ? C.accentBright : C.silver, fontWeight: pct === 100 ? 700 : 400 }}>{n} lbs</span>
+                </div>
+              );
+            })}
+          </Card>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ── REST TIMER ────────────────────────────────────────────────────────────────
+function RestTimer() {
+  const [duration, setDuration] = useState(90);
+  const [remaining, setRemaining] = useState(90);
+  const [running, setRunning] = useState(false);
+  const ref = useRef(null);
+
+  // Play a beep tone using the Web Audio API (no file needed)
+  const playBeep = () => {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const beepAt = (start, freq) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = "square";
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.0001, ctx.currentTime + start);
+        gain.gain.exponentialRampToValueAtTime(0.4, ctx.currentTime + start + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + start + 0.18);
+        osc.start(ctx.currentTime + start);
+        osc.stop(ctx.currentTime + start + 0.2);
+      };
+      // Three rising beeps
+      beepAt(0, 660);
+      beepAt(0.25, 660);
+      beepAt(0.5, 990);
+    } catch (e) { /* audio not available */ }
+  };
+
+  useEffect(() => {
+    if (running) {
+      ref.current = setInterval(() => {
+        setRemaining(r => { if (r <= 1) { clearInterval(ref.current); setRunning(false); playBeep(); return 0; } return r - 1; });
+      }, 1000);
+    }
+    return () => clearInterval(ref.current);
+  }, [running]);
+
+  const pct = remaining / duration;
+  const R = 58, circ = 2 * Math.PI * R;
+  const mins = Math.floor(remaining / 60), secs = remaining % 60;
+  const isLow = remaining <= 10 && remaining > 0;
+  const presets = [{ l: "45s", v: 45 }, { l: "60s", v: 60 }, { l: "90s", v: 90 }, { l: "2m", v: 120 }, { l: "3m", v: 180 }];
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <Card glow={remaining === 0}>
+        <div style={{ textAlign: "center" }}>
+          <svg width={150} height={150} style={{ margin: "0 auto", display: "block" }}>
+            <circle cx={75} cy={75} r={R} fill="none" stroke={C.bgElevated} strokeWidth={10} />
+            <circle cx={75} cy={75} r={R} fill="none"
+              stroke={remaining === 0 ? C.success : isLow ? C.danger : C.accent}
+              strokeWidth={10} strokeLinecap="round"
+              strokeDasharray={circ} strokeDashoffset={circ * (1 - pct)}
+              transform="rotate(-90 75 75)"
+              style={{ transition: "stroke-dashoffset 1s linear, stroke 0.3s" }}
+            />
+            <text x={75} y={70} textAnchor="middle" fill={C.white} fontSize={30} fontWeight={900} fontFamily="system-ui">
+              {mins}:{secs.toString().padStart(2, "0")}
+            </text>
+            <text x={75} y={90} textAnchor="middle" fill={C.silverDim} fontSize={11} fontFamily="system-ui">
+              {remaining === 0 ? "LIFT!" : "remaining"}
+            </text>
+          </svg>
+        </div>
+        <div style={{ display: "flex", gap: 10, justifyContent: "center", marginTop: 10 }}>
+          {!running
+            ? <Btn onClick={() => { setRemaining(duration); setRunning(true); }}>{remaining === duration ? "Start" : "Resume"}</Btn>
+            : <Btn onClick={() => { clearInterval(ref.current); setRunning(false); }} color={C.danger}>Pause</Btn>
+          }
+          <Btn onClick={() => { clearInterval(ref.current); setRunning(false); setRemaining(duration); }} outline>Reset</Btn>
+        </div>
+      </Card>
+      <Card>
+        <Eyebrow>Presets</Eyebrow>
+        <div style={{ display: "flex", gap: 6 }}>
+          {presets.map(p => (
+            <button key={p.v} onClick={() => { setDuration(p.v); setRemaining(p.v); setRunning(false); clearInterval(ref.current); }} style={{
+              flex: 1, padding: "9px 2px", borderRadius: 8,
+              border: duration === p.v ? `1px solid ${C.accent}` : `1px solid ${C.borderDim}`,
+              background: duration === p.v ? C.accentGlow : C.bg,
+              color: duration === p.v ? C.accentBright : C.silverDim,
+              fontWeight: 700, fontSize: 12, cursor: "pointer",
+            }}>{p.l}</button>
+          ))}
+        </div>
+      </Card>
+      <Card>
+        <Eyebrow>Rest Guide</Eyebrow>
+        {[
+          ["Compounds (squat, bench, deadlift)", "2–3 min"],
+          ["Accessory / isolation", "60–90s"],
+          ["Supersets", "45–60s"],
+          ["Calves", "60s"],
+        ].map(([type, time]) => (
+          <div key={type} style={{ display: "flex", justifyContent: "space-between", padding: "7px 0", borderBottom: `1px solid ${C.borderDim}` }}>
+            <span style={{ color: C.silverDim, fontSize: 12 }}>{type}</span>
+            <span style={{ color: C.white, fontSize: 12, fontWeight: 700 }}>{time}</span>
+          </div>
+        ))}
+      </Card>
+    </div>
+  );
+}
+
+// ── PROGRESS ──────────────────────────────────────────────────────────────────
+function Progress({ profile, history, prs, onClear, customProgram }) {
+  const [filter, setFilter] = useState("All");
+  const program = customProgram || profile.program;
+  const days = ["All", ...Object.keys(program)];
+  const filtered = filter === "All" ? history : history.filter(h => h.day === filter);
+  const sorted = [...filtered].sort((a, b) => b.timestamp - a.timestamp);
+  const totalVol = history.reduce((s, h) => s + (h.volume || 0), 0);
+  const prCount = Object.keys(prs).length;
+  const last10 = [...history].sort((a, b) => a.timestamp - b.timestamp).slice(-10);
+  const maxVol = Math.max(...last10.map(s => s.volume || 0), 1);
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ display: "flex", gap: 8 }}>
+        {[
+          { l: "Sessions", v: history.length, c: C.accentBright },
+          { l: "PRs Set", v: prCount, c: C.gold },
+          { l: "Volume", v: totalVol >= 1000 ? `${(totalVol / 1000).toFixed(1)}k` : totalVol, c: C.success },
+        ].map(s => (
+          <Card key={s.l} style={{ flex: 1, textAlign: "center", padding: "12px 8px" }}>
+            <div style={{ fontSize: 22, fontWeight: 900, color: s.c }}>{s.v}</div>
+            <div style={{ fontSize: 10, color: C.silverDim, textTransform: "uppercase", letterSpacing: 1 }}>{s.l}</div>
+          </Card>
+        ))}
+      </div>
+
+      {last10.length > 1 && (
+        <Card>
+          <Eyebrow>Volume Trend</Eyebrow>
+          <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: 64 }}>
+            {last10.map((s, i) => {
+              const h = Math.max(4, ((s.volume || 0) / maxVol) * 58);
+              const col = program[s.day]?.color || C.accent;
+              return (
+                <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+                  <div style={{ width: "100%", height: h, borderRadius: 3, background: col, opacity: 0.85 }} />
+                  <div style={{ fontSize: 8, color: C.silverDim, textAlign: "center" }}>{s.day?.slice(0, 3)}</div>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+      )}
+
+      {prCount > 0 && (
+        <Card>
+          <Eyebrow color={C.gold}>Personal Records 🏆</Eyebrow>
+          {Object.entries(prs).map(([name, pr]) => (
+            <div key={name} style={{ display: "flex", justifyContent: "space-between", padding: "7px 8px", background: C.bg, borderRadius: 6, marginBottom: 4 }}>
+              <span style={{ color: C.silver, fontSize: 12 }}>{name}</span>
+              <span style={{ color: C.gold, fontWeight: 700, fontSize: 13 }}>{pr.weight} lbs · {pr.date}</span>
+            </div>
+          ))}
+        </Card>
+      )}
+
+      <Card>
+        <Eyebrow>Filter Sessions</Eyebrow>
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+          {days.map(d => (
+            <button key={d} onClick={() => setFilter(d)} style={{
+              padding: "6px 12px", borderRadius: 8, border: "none",
+              background: filter === d ? (program[d]?.color || C.accent) : C.bg,
+              color: filter === d ? "#fff" : C.silverDim,
+              fontWeight: filter === d ? 700 : 400, fontSize: 12, cursor: "pointer",
+            }}>{d}</button>
+          ))}
+        </div>
+      </Card>
+
+      {sorted.length === 0 ? (
+        <Card>
+          <div style={{ textAlign: "center", padding: "32px 0" }}>
+            <div style={{ fontSize: 40 }}>✈️</div>
+            <div style={{ color: C.silverDim, marginTop: 12 }}>No sessions logged yet.</div>
+            <div style={{ color: C.silverDim + "88", fontSize: 12, marginTop: 4 }}>Mission starts when you log your first session.</div>
+          </div>
+        </Card>
+      ) : sorted.map((session, i) => (
+        <Card key={i}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+            <div>
+              <div style={{ color: program[session.day]?.color || C.accent, fontWeight: 700, fontSize: 14 }}>{session.day}</div>
+              <div style={{ color: C.silverDim, fontSize: 11, marginTop: 2 }}>{session.date}</div>
+            </div>
+            <div style={{ textAlign: "right" }}>
+              <div style={{ color: C.success, fontSize: 12, fontWeight: 700 }}>{(session.volume || 0).toLocaleString()} lbs</div>
+              <div style={{ color: C.silverDim, fontSize: 10 }}>volume</div>
+            </div>
+          </div>
+          {program[session.day]?.exercises.map((ex, ei) => {
+            const el = session.logs[ei];
+            if (!el) return null;
+            const sets = Object.values(el).filter(s => s.weight || s.reps);
+            if (!sets.length) return null;
+            const maxW = Math.max(...sets.map(s => Number(s.weight) || 0));
+            return (
+              <div key={ei} style={{ padding: "7px 0", borderBottom: `1px solid ${C.borderDim}` }}>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span style={{ color: C.silver, fontSize: 12 }}>{ex.name}</span>
+                  <span style={{ color: C.white, fontSize: 12, fontWeight: 700 }}>{maxW > 0 ? `${maxW} lbs` : "—"}</span>
+                </div>
+                <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginTop: 4 }}>
+                  {sets.map((s, si) => (
+                    <span key={si} style={{ background: C.bg, borderRadius: 4, padding: "2px 6px", fontSize: 10, color: C.silverDim }}>{s.weight || "—"}×{s.reps || "—"}</span>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </Card>
+      ))}
+
+      {history.length > 0 && (
+        <Btn onClick={onClear} outline color={C.danger} style={{ width: "100%" }}>Clear My Data</Btn>
+      )}
+    </div>
+  );
+}
+
+// ── CLIENT MANAGER ────────────────────────────────────────────────────────────
+function ClientManager({ clients, onAdd, onRemove }) {
+  const [form, setForm] = useState({ name: "", goal: "", days: "", notes: "" });
+  const [adding, setAdding] = useState(false);
+
+  const handleAdd = () => {
+    if (!form.name.trim()) return;
+    onAdd({ ...form, id: Date.now().toString(), avatar: "👤", color: C.accent, role: "Client", program: MURRY_PROGRAM });
+    setForm({ name: "", goal: "", days: "", notes: "" });
+    setAdding(false);
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <Card glow>
+        <Eyebrow color={C.accentBright}>Trybnus Fitness — Client Roster</Eyebrow>
+        <div style={{ color: C.silverDim, fontSize: 12, marginTop: 4 }}>
+          {clients.length} active client{clients.length !== 1 ? "s" : ""}
+        </div>
+      </Card>
+
+      {clients.map(c => (
+        <Card key={c.id}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ width: 44, height: 44, borderRadius: "50%", background: c.color + "22", border: `2px solid ${c.color}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>{c.avatar}</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ color: C.white, fontWeight: 700 }}>{c.name}</div>
+              <div style={{ color: C.silverDim, fontSize: 12, marginTop: 2 }}>{c.goal || "No goal set"}</div>
+              {c.notes && <div style={{ color: C.silverDim, fontSize: 11, marginTop: 4, fontStyle: "italic" }}>{c.notes}</div>}
+            </div>
+            <Btn onClick={() => onRemove(c.id)} outline color={C.danger} small>Remove</Btn>
+          </div>
+        </Card>
+      ))}
+
+      {adding ? (
+        <Card>
+          <Eyebrow>New Client</Eyebrow>
+          {[
+            { label: "Name", key: "name", placeholder: "Client name" },
+            { label: "Goal", key: "goal", placeholder: "e.g. Lose 20 lbs" },
+            { label: "Training Days", key: "days", placeholder: "e.g. Mon / Wed / Fri" },
+            { label: "Notes", key: "notes", placeholder: "Injuries, preferences..." },
+          ].map(f => (
+            <div key={f.key} style={{ marginBottom: 10 }}>
+              <Eyebrow>{f.label}</Eyebrow>
+              <input value={form[f.key]} onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))}
+                placeholder={f.placeholder}
+                style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 8, color: C.white, padding: "10px 14px", fontSize: 14, width: "100%", boxSizing: "border-box", outline: "none" }}
+              />
+            </div>
+          ))}
+          <div style={{ display: "flex", gap: 8 }}>
+            <Btn onClick={handleAdd} style={{ flex: 1 }}>Add Client</Btn>
+            <Btn onClick={() => setAdding(false)} outline style={{ flex: 1 }}>Cancel</Btn>
+          </div>
+        </Card>
+      ) : (
+        <Btn onClick={() => setAdding(true)} outline style={{ width: "100%" }}>+ Add New Client</Btn>
+      )}
+    </div>
+  );
+}
+
+// ── MAIN APP ──────────────────────────────────────────────────────────────────
+const DEFAULT_PROFILES = [
+  { id: "murry", name: "Murry DuBose", avatar: "✈️", color: C.accent, role: "Trainer", goal: "Classic Physique · April 2027", program: MURRY_PROGRAM },
+  { id: "wife", name: "Mrs. DuBose", avatar: "💜", color: "#9B59B6", role: "Member", goal: "Fat Loss · 195 → 180 lbs", program: WIFE_PROGRAM },
+];
+
+export default function App() {
+  const [screen, setScreen] = useState("home");
+  const [tab, setTab] = useState("Session");
+  const [activeProfileId, setActiveProfileId] = useState("murry");
+  const [profiles, setProfiles] = useState(DEFAULT_PROFILES);
+  const [allHistory, setAllHistory] = useState({});
+  const [allPRs, setAllPRs] = useState({});
+  const [clients, setClients] = useState([]);
+  const [customPrograms, setCustomPrograms] = useState({});
+  const [activeSessions, setActiveSessions] = useState({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function init() {
+      const h = await load("trybnus_history", {});
+      const p = await load("trybnus_prs", {});
+      const c = await load("trybnus_clients", []);
+      const cp = await load("trybnus_custom_programs", {});
+      const as = await load("trybnus_active_sessions", {});
+      setAllHistory(h); setAllPRs(p); setClients(c); setCustomPrograms(cp); setActiveSessions(as);
+      setLoading(false);
+    }
+    init();
+  }, []);
+
+  const activeProfile = profiles.find(p => p.id === activeProfileId) || profiles[0];
+  const history = allHistory[activeProfileId] || [];
+  const prs = allPRs[activeProfileId] || {};
+  const activeCustomProgram = customPrograms[activeProfileId] || null;
+  const activeSession = activeSessions[activeProfileId] || null;
+
+  const handleEditProgram = async (updatedProgram) => {
+    const newCustom = { ...customPrograms, [activeProfileId]: updatedProgram };
+    setCustomPrograms(newCustom);
+    await save("trybnus_custom_programs", newCustom);
+  };
+
+  const calcVol = (logs) => {
+    let t = 0;
+    Object.values(logs).forEach(ex => Object.values(ex).forEach(s => {
+      t += (parseFloat(s.weight) || 0) * (parseInt(s.reps) || 0);
+    }));
+    return t;
+  };
+
+  // Save a single set into the day's active session (no surplus sessions)
+  const handleSaveSet = async (day, dayColor, ei, si, exName, setData) => {
+    const today = new Date().toLocaleDateString();
+    let current = activeSessions[activeProfileId];
+
+    // Start a fresh active session if none, or if the existing one is a different day/date
+    if (!current || current.day !== day || current.date !== today) {
+      current = { day, date: today, timestamp: Date.now(), logs: {}, volume: 0 };
+    } else {
+      current = JSON.parse(JSON.stringify(current));
+    }
+
+    if (!current.logs[ei]) current.logs[ei] = {};
+    current.logs[ei][si] = setData;
+    current.volume = calcVol(current.logs);
+
+    const newActive = { ...activeSessions, [activeProfileId]: current };
+    setActiveSessions(newActive);
+    await save("trybnus_active_sessions", newActive);
+
+    // Update PRs live as sets are saved
+    const w = parseFloat(setData.weight) || 0;
+    if (w > 0) {
+      const newPRs = { ...allPRs };
+      if (!newPRs[activeProfileId]) newPRs[activeProfileId] = {};
+      if (!newPRs[activeProfileId][exName] || w > newPRs[activeProfileId][exName].weight) {
+        newPRs[activeProfileId][exName] = { weight: w, date: today };
+        setAllPRs(newPRs);
+        await save("trybnus_prs", newPRs);
+      }
+    }
+  };
+
+  // Finish the session: move active session into history, clear active
+  const handleFinishSession = async (day) => {
+    const current = activeSessions[activeProfileId];
+    if (!current) return;
+    const newHistory = { ...allHistory, [activeProfileId]: [...(allHistory[activeProfileId] || []), current] };
+    const newActive = { ...activeSessions };
+    delete newActive[activeProfileId];
+    setAllHistory(newHistory);
+    setActiveSessions(newActive);
+    await save("trybnus_history", newHistory);
+    await save("trybnus_active_sessions", newActive);
+    setTab("Progress");
+  };
+
+  const handleClear = async () => {
+    const newH = { ...allHistory, [activeProfileId]: [] };
+    const newP = { ...allPRs, [activeProfileId]: {} };
+    const newA = { ...activeSessions };
+    delete newA[activeProfileId];
+    setAllHistory(newH); setAllPRs(newP); setActiveSessions(newA);
+    await save("trybnus_history", newH);
+    await save("trybnus_prs", newP);
+    await save("trybnus_active_sessions", newA);
+  };
+
+  const handleAddClient = async (client) => {
+    const newClients = [...clients, client];
+    const newProfiles = [...profiles, { ...client, program: MURRY_PROGRAM }];
+    setClients(newClients); setProfiles(newProfiles);
+    await save("trybnus_clients", newClients);
+  };
+
+  const handleRemoveClient = async (id) => {
+    const newClients = clients.filter(c => c.id !== id);
+    const newProfiles = profiles.filter(p => p.id !== id);
+    setClients(newClients); setProfiles(newProfiles);
+    await save("trybnus_clients", newClients);
+  };
+
+  const totalSessions = Object.values(allHistory).flat().length;
+
+  const navItems = [
+    { id: "Session", icon: "🏋️" },
+    { id: "Calculator", icon: "⚖️" },
+    { id: "Timer", icon: "⏱️" },
+    { id: "Progress", icon: "📈" },
+    { id: "Clients", icon: "👥" },
+  ];
+
+  if (loading) {
+    return (
+      <div style={{ minHeight: "100vh", background: C.bg, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
+        <div style={{ fontSize: 48 }}>✈️</div>
+        <div style={{ color: C.accent, fontSize: 18, fontWeight: 800, letterSpacing: 2 }}>TRYBNUS FITNESS</div>
+        <div style={{ color: C.silverDim, fontSize: 12 }}>Loading...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ minHeight: "100vh", background: C.bg, color: C.white, fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif", maxWidth: 480, margin: "0 auto", paddingBottom: 80 }}>
+
+      {/* HEADER */}
+      <div style={{ position: "sticky", top: 0, background: C.bg, zIndex: 20, borderBottom: `1px solid ${C.borderDim}` }}>
+        {/* Top bar */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 16px 8px" }}>
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: 20 }}>✈️</span>
+              <div>
+                <div style={{ fontSize: 16, fontWeight: 900, letterSpacing: 1 }}>
+                  <span style={{ color: C.accentBright }}>TRYBNUS</span>
+                  <span style={{ color: C.white }}> FITNESS</span>
+                </div>
+                <div style={{ fontSize: 9, color: C.silverDim, letterSpacing: 2, textTransform: "uppercase" }}>Personal Training System</div>
+              </div>
+            </div>
+          </div>
+          <div style={{ background: C.bgCard, borderRadius: 10, padding: "6px 12px", border: `1px solid ${C.borderDim}`, textAlign: "right" }}>
+            <div style={{ fontSize: 9, color: C.silverDim, letterSpacing: 1, textTransform: "uppercase" }}>Total Sessions</div>
+            <div style={{ fontSize: 20, fontWeight: 900, color: C.accentBright }}>{totalSessions}</div>
+          </div>
+        </div>
+
+        {/* Profile switcher */}
+        <div style={{ display: "flex", gap: 6, padding: "0 16px 10px", overflowX: "auto" }}>
+          {profiles.map(p => (
+            <button key={p.id} onClick={() => setActiveProfileId(p.id)} style={{
+              display: "flex", alignItems: "center", gap: 6,
+              padding: "6px 12px", borderRadius: 20, border: "none",
+              background: activeProfileId === p.id ? p.color + "33" : C.bgCard,
+              border: `1px solid ${activeProfileId === p.id ? p.color : C.borderDim}`,
+              cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0,
+            }}>
+              <span style={{ fontSize: 14 }}>{p.avatar}</span>
+              <span style={{ color: activeProfileId === p.id ? C.white : C.silverDim, fontSize: 12, fontWeight: activeProfileId === p.id ? 700 : 400 }}>{p.name.split(" ")[0]}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* CONTENT */}
+      <div style={{ padding: 16 }}>
+        {tab === "Session" && <SessionLogger profile={activeProfile} prs={prs} onSaveSet={handleSaveSet} onFinishSession={handleFinishSession} activeSession={activeSession} customProgram={activeCustomProgram} onEditProgram={handleEditProgram} />}
+        {tab === "Calculator" && <Calculators />}
+        {tab === "Timer" && <RestTimer />}
+        {tab === "Progress" && <Progress profile={activeProfile} history={history} prs={prs} onClear={handleClear} customProgram={activeCustomProgram} />}
+        {tab === "Clients" && <ClientManager clients={clients} onAdd={handleAddClient} onRemove={handleRemoveClient} />}
+      </div>
+
+      {/* BOTTOM NAV */}
+      <div style={{ position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: 480, background: C.bg, borderTop: `1px solid ${C.borderDim}`, display: "flex", padding: "8px 0 14px" }}>
+        {navItems.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3, background: "none", border: "none", cursor: "pointer", padding: "4px 0" }}>
+            <span style={{ fontSize: 20 }}>{t.icon}</span>
+            <span style={{ fontSize: 9, color: tab === t.id ? C.accentBright : C.silverDim, fontWeight: tab === t.id ? 800 : 400, letterSpacing: 0.5, textTransform: "uppercase" }}>{t.id}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
